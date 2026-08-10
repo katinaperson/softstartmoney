@@ -206,10 +206,10 @@ body.dark-mode input::placeholder,body.dark-mode textarea::placeholder{color:var
 .empty-state{font-size:0.75rem;color:var(--ink-lt);text-align:center;padding:14px 0;font-style:italic;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:white;font-size:0.75rem;padding:8px 18px;border-radius:20px;opacity:0;transition:all 0.2s;pointer-events:none;z-index:999;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.install-banner{background:linear-gradient(135deg,#1A1A18,#2A2A28);border-bottom:1px solid #3A3A38;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.install-text{font-size:0.72rem;color:rgba(255,255,255,0.6);}
-.install-text strong{color:white;}
-.install-btn{background:var(--accent);border:none;color:#1A1A18;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+
+
+
+
 .prog-wrap{margin-bottom:10px;}
 .prog-label{display:flex;justify-content:space-between;font-size:0.62rem;color:var(--ink-lt);margin-bottom:4px;}
 .prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
@@ -226,20 +226,41 @@ body.dark-mode input::placeholder,body.dark-mode textarea::placeholder{color:var
 .pstrip-label{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-lt);}
 .wrapup-textarea{width:100%;min-height:80px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:300;color:var(--ink);line-height:1.7;resize:vertical;outline:none;transition:border-color 0.2s;box-sizing:border-box;}
 .wrapup-textarea:focus{border-color:var(--accent);}
+/* ── BOTTOM NAV ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#1A1A18;border-top:1px solid #2A2A28;z-index:200;padding-bottom:env(safe-area-inset-bottom);}
+.bottom-nav-items{display:flex;align-items:stretch;}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px 6px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,0.45);transition:color 0.15s;gap:3px;min-width:0;}
+.bottom-nav-item.active{color:var(--accent);}
+.bottom-nav-item .bnav-icon{font-size:1.3rem;line-height:1;}
+.bottom-nav-item .bnav-label{font-size:0.52rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+/* MORE DRAWER */
+.more-drawer{display:none;position:fixed;bottom:0;left:0;right:0;background:#1A1A18;border-top:1px solid #2A2A28;z-index:199;padding-bottom:env(safe-area-inset-bottom);}
+.more-drawer.open{display:block;}
+.more-drawer-item{display:flex;align-items:center;gap:14px;padding:14px 24px;color:rgba(255,255,255,0.65);cursor:pointer;border-bottom:1px solid #2A2A28;font-size:0.82rem;}
+.more-drawer-item:last-child{border-bottom:none;}
+.more-drawer-item.active{color:var(--accent);}
+.more-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:198;}
+.more-drawer-overlay.open{display:block;}
+
 @media(max-width:600px){
   .snapshot-grid{grid-template-columns:1fr 1fr;}
   .field-row.c2,.field-row.c3{grid-template-columns:1fr;}
-  .main{padding:14px;}
+  .main{padding:14px;padding-bottom:80px;}
   .logo{font-size:1.3rem;}
   .paycheck-summary-strip{grid-template-columns:1fr 1fr;}
+  .nav{display:none;}
+  .bottom-nav{display:block;}
 }
-@media(min-width:601px){.snapshot-grid{grid-template-columns:repeat(4,1fr);}}
+@media(min-width:601px){
+  .snapshot-grid{grid-template-columns:repeat(4,1fr);}
+  .bottom-nav{display:none;}
+  .more-drawer{display:none!important;}
+  .more-drawer-overlay{display:none!important;}
+}
 </style>
 </head>
 <body>
-<div class="install-banner" id="install-banner" style="display:none;">
-  <div class="install-text"><strong>Add to Home Screen</strong> — use Soft Start Money like an app, anytime.</div>
-  <button class="install-btn" id="install-btn">Install</button>
 </div>
 <div class="header">
   <div class="logo-wrap">
@@ -672,6 +693,45 @@ body.dark-mode input::placeholder,body.dark-mode textarea::placeholder{color:var
 </div>
 
 </div>
+
+<!-- BOTTOM NAV (mobile only) -->
+<div class="bottom-nav">
+  <div class="bottom-nav-items">
+    <button class="bottom-nav-item active" id="bnav-dashboard" onclick="switchTab('dashboard');closeMoreDrawer();">
+      <span class="bnav-icon">📊</span><span class="bnav-label">Overview</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-coming-in" onclick="switchTab('coming-in');closeMoreDrawer();">
+      <span class="bnav-icon">💚</span><span class="bnav-label">Coming In</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-going-out" onclick="switchTab('going-out');closeMoreDrawer();">
+      <span class="bnav-icon">💸</span><span class="bnav-label">Going Out</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-coming-up" onclick="switchTab('coming-up');closeMoreDrawer();">
+      <span class="bnav-icon">📅</span><span class="bnav-label">Coming Up</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-more" onclick="toggleMoreDrawer();">
+      <span class="bnav-icon">☰</span><span class="bnav-label">More</span>
+    </button>
+  </div>
+</div>
+
+<!-- MORE DRAWER -->
+<div class="more-drawer-overlay" id="more-overlay" onclick="closeMoreDrawer()"></div>
+<div class="more-drawer" id="more-drawer">
+  <div class="more-drawer-item" id="mdraw-paycheck-plan" onclick="switchTab('paycheck-plan');closeMoreDrawer();">
+    <span style="font-size:1.3rem;">💰</span> Paycheck Plan
+  </div>
+  <div class="more-drawer-item" id="mdraw-today" onclick="switchTab('today');closeMoreDrawer();">
+    <span style="font-size:1.3rem;">🧾</span> Spent Today
+  </div>
+  <div class="more-drawer-item" id="mdraw-debt-payoff" onclick="switchTab('debt-payoff');closeMoreDrawer();">
+    <span style="font-size:1.3rem;">📉</span> Debt Payoff
+  </div>
+  <div class="more-drawer-item" id="mdraw-saving-for" onclick="switchTab('saving-for');closeMoreDrawer();">
+    <span style="font-size:1.3rem;">🎯</span> Saving For
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1233,11 +1293,6 @@ function renderDashboard(){
 function toggleDark(){const isDark=document.body.classList.toggle('dark-mode');localStorage.setItem('ssm-dark',isDark?'1':'0');document.getElementById('dark-btn').textContent=isDark?'☀️':'🌙';}
 (function(){if(localStorage.getItem('ssm-dark')==='1'){document.body.classList.add('dark-mode');const btn=document.getElementById('dark-btn');if(btn)btn.textContent='☀️';}})();
 
-// PWA
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('install-banner').style.display='flex';});
-document.getElementById('install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted')document.getElementById('install-banner').style.display='none';deferredPrompt=null;});
-window.addEventListener('appinstalled',()=>{document.getElementById('install-banner').style.display='none';});
 // SERVICE WORKER
 if('serviceWorker' in navigator){
   const swCode=`
@@ -1342,6 +1397,35 @@ function exportCSV(){
   a.download=`softstart-money-${MONTHS[currentMonth].toLowerCase()}-${currentYear}.csv`;
   a.click();
   toast('Exported to CSV ✓');
+}
+
+// BOTTOM NAV
+const BOTTOM_NAV_TABS = ['dashboard','coming-in','going-out','coming-up'];
+const MORE_TABS = ['paycheck-plan','today','debt-payoff','saving-for'];
+
+function updateBottomNav(id){
+  document.querySelectorAll('.bottom-nav-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.more-drawer-item').forEach(el=>el.classList.remove('active'));
+  if(BOTTOM_NAV_TABS.includes(id)){
+    const btn=document.getElementById('bnav-'+id);
+    if(btn)btn.classList.add('active');
+  } else if(MORE_TABS.includes(id)){
+    const item=document.getElementById('mdraw-'+id);
+    if(item)item.classList.add('active');
+    const moreBtn=document.getElementById('bnav-more');
+    if(moreBtn)moreBtn.classList.add('active');
+  }
+}
+function toggleMoreDrawer(){
+  const drawer=document.getElementById('more-drawer');
+  const overlay=document.getElementById('more-overlay');
+  const isOpen=drawer.classList.contains('open');
+  if(isOpen){closeMoreDrawer();}
+  else{drawer.classList.add('open');overlay.classList.add('open');}
+}
+function closeMoreDrawer(){
+  document.getElementById('more-drawer').classList.remove('open');
+  document.getElementById('more-overlay').classList.remove('open');
 }
 
 // RENDER ALL
