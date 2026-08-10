@@ -68,7 +68,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .snap-num.negative{color:var(--rose);}
 .snap-label{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-lt);}
 .snap-sub{font-size:0.65rem;color:var(--ink-lt);margin-top:4px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow);}body.dark-mode .card{background:var(--surface);}body.dark-mode .collapsible{background:var(--surface);}body.dark-mode .bill-item,body.dark-mode .onetime-item,body.dark-mode .saving-card,body.dark-mode .debt-card{background:var(--surface);}body.dark-mode .snap-card{background:var(--surface);}body.dark-mode .paycheck-body{background:var(--surface);}
 .card-title{font-size:0.68rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-mid);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .card-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;margin-right:6px;flex-shrink:0;}
 .card-dot.amber{background:var(--amber);}
@@ -935,8 +935,8 @@ function renderCatGroup(group){
   const customItems=(ms().customCatItems||{})[group]||[];
   el.innerHTML=CAT_DEFS[group].map(c=>{
     const amt=getCatAmount(c.id);
-    return`<div class="cat-row"><div class="cat-left"><span class="cat-icon">${c.icon}</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${amt||''}" placeholder="$0" min="0" step="0.01" onchange="setCatAmount('${c.id}',this.value)"></div></div>`;
-  }).join('')+customItems.map(c=>`<div class="cat-row"><div class="cat-left"><span class="cat-icon">✦</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${c.amount||''}" placeholder="$0" min="0" step="0.01" onchange="setCustomItemAmount('${group}',${c.id},this.value)"><button class="remove-btn" onclick="deleteCustomItem('${group}',${c.id})">×</button></div></div>`).join('')
+    return`<div class="cat-row"><div class="cat-left"><span class="cat-icon">${c.icon}</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${amt||''}" placeholder="$0" min="0" step="0.01" oninput="setCatAmount('${c.id}',this.value)" onchange="setCatAmount('${c.id}',this.value)"></div></div>`;
+  }).join('')+customItems.map(c=>`<div class="cat-row"><div class="cat-left"><span class="cat-icon">✦</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${c.amount||''}" placeholder="$0" min="0" step="0.01" oninput="setCustomItemAmount('${group}',${c.id},this.value)" onchange="setCustomItemAmount('${group}',${c.id},this.value)"><button class="remove-btn" onclick="deleteCustomItem('${group}',${c.id})">×</button></div></div>`).join('')
   +`<div class="add-custom-item-row"><input type="text" id="custom-item-name-${group}" placeholder="Add your own..."><input type="number" id="custom-item-amt-${group}" placeholder="$0" style="width:90px;flex-shrink:0;" step="0.01"><button class="btn btn-primary btn-sm" onclick="addCustomItem('${group}')">Add</button></div>`;
   const total=getTotalForGroup(group);
   if(totalEl)totalEl.textContent=fmtS(total);
@@ -1034,7 +1034,7 @@ function renderBills(){
   if(paidTotalEl)paidTotalEl.textContent=fmtS(paid);
   if(metaEl)metaEl.textContent=ms().bills.length?`${ms().bills.filter(b=>b.paid).length} of ${ms().bills.length} paid`:'';
   if(!ms().bills.length){el.innerHTML='<div class="empty-state">No bills yet.</div>';return;}
-  el.innerHTML=sorted.map(b=>`<div class="bill-item"><div class="bill-left"><div class="bill-name" style="${b.paid?'text-decoration:line-through;opacity:0.5;':''}">${b.name}</div><div class="bill-due">Due on the ${b.dueDay}${ordinal(b.dueDay)}</div></div><div class="bill-right"><span class="bill-amount">${fmtM(b.amount)}</span><button class="paid-toggle ${b.paid?'paid':'unpaid'}" onclick="toggleBill(${b.id})">${b.paid?'✓ Paid':'Unpaid'}</button><button class="remove-btn" onclick="deleteBill(${b.id})">×</button></div></div>`).join('');
+  el.innerHTML=sorted.map(b=>`<div class="bill-item" onclick="toggleBill(${b.id})" style="cursor:pointer;"><div class="bill-left"><div class="bill-name" style="${b.paid?'text-decoration:line-through;opacity:0.5;':''}">${b.name}</div><div class="bill-due">Due on the ${b.dueDay}${ordinal(b.dueDay)}</div></div><div class="bill-right"><span class="bill-amount">${fmtM(b.amount)}</span><span class="paid-toggle ${b.paid?'paid':'unpaid'}">${b.paid?'✓ Paid':'Unpaid'}</span><button class="remove-btn" onclick="event.stopPropagation();deleteBill(${b.id})">×</button></div></div>`).join('');
 }
 
 // PAYCHECK PLAN
@@ -1069,7 +1069,11 @@ function setPaycheckAmount(dateKey,val){const p=(ms().paychecks||[]).find(p=>p.d
 function removePaycheck(dateKey){ms().paychecks=(ms().paychecks||[]).filter(p=>p.date!==dateKey);save();renderPaycheckPlan();toast('Removed.');}
 function getBillsForPaycheckWindow(startDate,endDate){
   const start=new Date(startDate+'T12:00:00');const end=new Date(endDate+'T12:00:00');
-  return ms().bills.filter(b=>{const billDate=new Date(currentYear,currentMonth,b.dueDay,12,0,0);return billDate>start&&billDate<=end;}).sort((a,b)=>a.dueDay-b.dueDay);
+  return ms().bills.filter(b=>{
+    const day=b.dueDay||(b.dueDate?new Date(b.dueDate+'T12:00:00').getDate():1);
+    const billDate=new Date(currentYear,currentMonth,day,12,0,0);
+    return billDate>start&&billDate<=end;
+  }).sort((a,b)=>(a.dueDay||1)-(b.dueDay||1));
 }
 function renderPaycheckPlan(){
   const paychecks=ms().paychecks||[];
@@ -1113,7 +1117,7 @@ function renderSpend(){
   const todayAmt=todayEntries.reduce((s,e)=>s+e.amount,0);
   const monthAmt=monthEntries.reduce((s,e)=>s+e.amount,0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('today-total',fmtS(todayAmt));
+  set('today-total',fmtM(todayAmt));
   set('today-count-label',todayEntries.length===0?'nothing logged today':todayEntries.length===1?'1 entry today':`${todayEntries.length} entries today`);
   const sumEl=document.getElementById('spend-summary');if(sumEl)sumEl.textContent=monthEntries.length?`${monthEntries.length} entries · ${fmtM(monthAmt)} this month`:'';
   const bdEl=document.getElementById('spend-breakdown');
@@ -1149,7 +1153,7 @@ function addDebt(){
   const minPay=parseFloat(document.getElementById('debt-minpay').value);
   const targetDate=document.getElementById('debt-target-date').value;
   if(!name||!balance||!minPay){toast('Please fill in name, balance and minimum payment.');return;}
-  debts.push({id:Date.now(),name,lender,type,balance,rate:rate||0,minPay,targetDate});
+  debts.push({id:Date.now(),name,type,balance,rate:rate||0,minPay,targetDate});
   ['debt-name','debt-balance','debt-rate','debt-minpay','debt-target-date'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('debt-type').value='Credit Card';
   save();renderDebts();toast('Debt added ✓');
@@ -1269,7 +1273,7 @@ function renderDashboard(){
   const todayAmt=ms().spend.filter(s=>isToday(s.date)).reduce((s,e)=>s+e.amount,0);
   const todayCount=ms().spend.filter(s=>isToday(s.date)).length;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('snap-in',fmtS(totalIn));set('snap-out',fmtS(totalOut));set('snap-bills',unpaidBills);set('snap-today',fmtS(todayAmt));
+  set('snap-in',fmtS(totalIn));set('snap-out',fmtS(totalOut));set('snap-bills',unpaidBills);set('snap-today',fmtM(todayAmt));
   set('snap-today-sub',todayCount===0?'nothing logged yet':todayCount===1?'1 entry today':`${todayCount} entries`);
   const leftEl=document.getElementById('dash-left');if(leftEl){leftEl.textContent=fmtM(left);leftEl.className='snap-num '+(left>=0?'positive':'negative');leftEl.style.fontSize='2.2rem';}
   const pctVal=totalIn>0?pct(totalOut,totalIn):0;set('dash-pct',pctVal+'%');
