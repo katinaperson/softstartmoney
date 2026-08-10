@@ -935,8 +935,8 @@ function renderCatGroup(group){
   const customItems=(ms().customCatItems||{})[group]||[];
   el.innerHTML=CAT_DEFS[group].map(c=>{
     const amt=getCatAmount(c.id);
-    return`<div class="cat-row"><div class="cat-left"><span class="cat-icon">${c.icon}</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${amt||''}" placeholder="$0" min="0" step="0.01" oninput="setCatAmount('${c.id}',this.value)" onchange="setCatAmount('${c.id}',this.value)"></div></div>`;
-  }).join('')+customItems.map(c=>`<div class="cat-row"><div class="cat-left"><span class="cat-icon">✦</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${c.amount||''}" placeholder="$0" min="0" step="0.01" oninput="setCustomItemAmount('${group}',${c.id},this.value)" onchange="setCustomItemAmount('${group}',${c.id},this.value)"><button class="remove-btn" onclick="deleteCustomItem('${group}',${c.id})">×</button></div></div>`).join('')
+    return`<div class="cat-row"><div class="cat-left"><span class="cat-icon">${c.icon}</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${amt||''}" placeholder="$0" min="0" step="0.01" oninput="setCatAmount('${c.id}',this.value)" oninput="setCatAmount('${c.id}',this.value)" onchange="setCatAmount('${c.id}',this.value)"></div></div>`;
+  }).join('')+customItems.map(c=>`<div class="cat-row"><div class="cat-left"><span class="cat-icon">✦</span><span class="cat-name">${c.name}</span></div><div class="cat-right"><input class="cat-input" type="number" value="${c.amount||''}" placeholder="$0" min="0" step="0.01" oninput="setCustomItemAmount('${group}',${c.id},this.value)" oninput="setCustomItemAmount('${group}',${c.id},this.value)" onchange="setCustomItemAmount('${group}',${c.id},this.value)"><button class="remove-btn" onclick="deleteCustomItem('${group}',${c.id})">×</button></div></div>`).join('')
   +`<div class="add-custom-item-row"><input type="text" id="custom-item-name-${group}" placeholder="Add your own..."><input type="number" id="custom-item-amt-${group}" placeholder="$0" style="width:90px;flex-shrink:0;" step="0.01"><button class="btn btn-primary btn-sm" onclick="addCustomItem('${group}')">Add</button></div>`;
   const total=getTotalForGroup(group);
   if(totalEl)totalEl.textContent=fmtS(total);
@@ -1092,7 +1092,8 @@ function renderPaycheckPlan(){
   if(summaryEl){summaryEl.style.display='block';const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};set('psum-income',fmtS(totalPaychecks));set('psum-bills',fmtS(totalBills));const leftEl=document.getElementById('psum-left');if(leftEl){leftEl.textContent=fmtS(totalLeft);leftEl.className='pstrip-num '+(totalLeft>=0?'positive':'negative');}}
   let html='';
   paychecks.forEach((p,idx)=>{
-    const prevDate=idx===0?`${currentYear}-${String(currentMonth).padStart(2,'0')}-00`:paychecks[idx-1].date;
+    // Use last day of previous month as the window start for first paycheck
+    const prevDate=idx===0?(()=>{const d=new Date(currentYear,currentMonth,1);d.setDate(d.getDate()-1);return d.toISOString().split('T')[0];})():paychecks[idx-1].date;
     const bills=hasBills?getBillsForPaycheckWindow(prevDate,p.date):[];
     const billsTotal=bills.reduce((s,b)=>s+b.amount,0);const leftover=p.amount-billsTotal;
     const billsHtml=bills.length?bills.map(b=>`<div class="paycheck-bill-row"><div><span class="paycheck-bill-name ${b.paid?'paycheck-bill-paid':''}">${b.name}</span><div class="paycheck-bill-due">Due on the ${b.dueDay}${ordinal(b.dueDay)}</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="paycheck-bill-amount">${fmtM(b.amount)}</span><button class="paid-toggle ${b.paid?'paid':'unpaid'}" onclick="toggleBill(${b.id})" style="font-size:0.55rem;padding:2px 7px;">${b.paid?'✓ Paid':'Unpaid'}</button></div></div>`).join(''):`<div class="no-bills-note">No bills due before this check.</div>`;
@@ -1119,7 +1120,7 @@ function renderSpend(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set('today-total',fmtM(todayAmt));
   set('today-count-label',todayEntries.length===0?'nothing logged today':todayEntries.length===1?'1 entry today':`${todayEntries.length} entries today`);
-  const sumEl=document.getElementById('spend-summary');if(sumEl)sumEl.textContent=monthEntries.length?`${monthEntries.length} entries · ${fmtM(monthAmt)} this month`:'';
+  const sumEl=document.getElementById('spend-summary');if(sumEl)sumEl.textContent=monthEntries.length?`${monthEntries.length} ${monthEntries.length===1?"entry":"entries"} · ${fmtM(monthAmt)} this month`:'';
   const bdEl=document.getElementById('spend-breakdown');
   if(bdEl){if(!monthEntries.length){bdEl.innerHTML='<div class="empty-state">Start logging and you\'ll see your patterns here.</div>';}else{const catMap={};monthEntries.forEach(e=>{catMap[e.cat]=(catMap[e.cat]||0)+e.amount;});const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);const top=sorted[0]?sorted[0][1]:1;bdEl.innerHTML=sorted.map(([cat,amt])=>`<div class="prog-wrap"><div class="prog-label"><span>${cat}</span><span>${fmtM(amt)}</span></div><div class="prog-bar"><div class="prog-fill rose" style="width:${pct(amt,top)}%"></div></div></div>`).join('');}}
   const listEl=document.getElementById('spend-list');
@@ -1273,7 +1274,7 @@ function renderDashboard(){
   const todayAmt=ms().spend.filter(s=>isToday(s.date)).reduce((s,e)=>s+e.amount,0);
   const todayCount=ms().spend.filter(s=>isToday(s.date)).length;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('snap-in',fmtS(totalIn));set('snap-out',fmtS(totalOut));set('snap-bills',unpaidBills);set('snap-today',fmtM(todayAmt));
+  set('snap-in',fmtM(totalIn));set('snap-out',fmtM(totalOut));set('snap-bills',unpaidBills);set('snap-today',fmtM(todayAmt));
   set('snap-today-sub',todayCount===0?'nothing logged yet':todayCount===1?'1 entry today':`${todayCount} entries`);
   const leftEl=document.getElementById('dash-left');if(leftEl){leftEl.textContent=fmtM(left);leftEl.className='snap-num '+(left>=0?'positive':'negative');leftEl.style.fontSize='2.2rem';}
   const pctVal=totalIn>0?pct(totalOut,totalIn):0;set('dash-pct',pctVal+'%');
